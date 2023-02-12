@@ -1,1 +1,0 @@
-cmd_/media/sf_Shared/SWE-3SH3/assignment1/seconds.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000 -T ./scripts/module-common.lds --build-id  -o /media/sf_Shared/SWE-3SH3/assignment1/seconds.ko /media/sf_Shared/SWE-3SH3/assignment1/seconds.o /media/sf_Shared/SWE-3SH3/assignment1/seconds.mod.o
