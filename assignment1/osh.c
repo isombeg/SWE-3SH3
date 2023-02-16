@@ -190,3 +190,8 @@ void exec_command(char* args_str, char **args, int *should_run, int should_recor
     }
 
 }
+
+//FAILED
+//mkdir -pv test/test1/test2/test3/
+//touch test/hi.txt test/test1/bye.txt
+//gcc shell.c -o testcase
