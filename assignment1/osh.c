@@ -10,10 +10,12 @@
 
 char* command_history[HISTORY_MAX_SIZE];
 int history_queue_count = 0, history_front = 0, commands_count = 0;
+
+void exec_command(char* args_str, char **args, int *should_run, int should_record_in_history);
    
 int split_string(const char* str, char** args) {
     int i = 0;
-    char* toSplit; 
+    char toSplit[128]; 
     strcpy(toSplit, str);
     char * token = strtok(toSplit, " ");
     // loop through the string to extract all other tokens
@@ -48,11 +50,13 @@ void record_history(char* command){
             command_history[history_queue_count++],
             command
         );
-        // fprintf(stdout, "stored %s\n", command_to_record);
+        fprintf(stdout, "stored %s (not full)\n", command);
         fflush(stdout);
     } else {
         // command_history[history_front] = command_to_record;
-        strcpy(command_history[history_queue_count++], command);
+        fprintf(stdout, "stored %s (is full)\n", command);
+        fflush(stdout);
+        strcpy(command_history[history_front], command);
         history_front = (history_front + 1) % HISTORY_MAX_SIZE;
     }
     commands_count++;
@@ -65,7 +69,7 @@ void display_history(){
         i++
     ){
         if(is_history_full()){
-            fprintf(stdout, "%d %s\n", commands_count - i, command_history[(history_front - i - 1) + 5 % HISTORY_MAX_SIZE]);
+            fprintf(stdout, "%d %s\n", commands_count - i, command_history[((history_front - i - 1) + HISTORY_MAX_SIZE) % HISTORY_MAX_SIZE]);
         } else {
             fprintf(stdout, "%d %s\n", commands_count - i, command_history[history_queue_count - i - 1]);
         }
@@ -73,13 +77,16 @@ void display_history(){
     fflush(stdout);
 }
 
-void peek_history(char** args) {
+void peek_history(char* args_str, int should_run_concurrent) {
     if(history_queue_count == 0) {
-        split_string("echo No commands in history.", args);
-        //strcpy(args_str, "echo No commands in history.");
+        //split_string("echo No commands in history.", args);
+        strcpy(args_str, "echo No commands in history.");
    } else {
-        split_string(command_history[(history_front + history_queue_count) % 5 - 1], args);
-        //strcpy(args_str, command_history[(history_front + history_queue_count) % 5 - 1]);
+        //split_string(command_history[(history_front + history_queue_count) % 5 - 1], args);
+        strcpy(args_str, command_history[(history_front + history_queue_count) % 5 - 1]);
+        if(should_run_concurrent){
+            strcat(args_str, " &");
+        }
     }
 }
 
@@ -87,10 +94,6 @@ int main(void) {
     char **args = malloc(MAX_LINE*sizeof(char*)); 
     char *args_str = malloc(128*sizeof(char));
     int should_run = 1;
-    int should_run_concurrent;
-    int should_record_in_history;
-    int status; 
-    pid_t pid; 
 
     for(int i = 0; i < HISTORY_MAX_SIZE; i++) {
         command_history[i] = (char*) malloc(128 * sizeof(char)); /*+1 for '\0' character */
@@ -104,72 +107,8 @@ int main(void) {
         fflush(stdout);
 
         fgets(args_str, 128, stdin);
-        args_str[strcspn(args_str, "\n")] = 0; //removes new line character
-        
-        // Split string into array of strings
-        int args_last_i = split_string(args_str, args);
 
-        //fprintf(stdout, "Received command: %s\n", args_str);
-        //fflush(stdout);
-
-        // Indicate if command should run concurrent
-        should_run_concurrent = 0;
-        if(!strcmp(args[args_last_i], "&")) {
-            should_run_concurrent = 1;
-            // strip ampersand from string
-            args[args_last_i] = '\0';
-        }
-
-        // Hook for executing last command
-        if(!strcmp(args[0], "!!")){
-            peek_history(args);
-            should_record_in_history = 0;
-        } else {
-            should_record_in_history = 1;
-        }
-
-        if(!strcmp(args[0], "exit")) {
-            should_run = 0;
-            break;
-        }
-        if(!strcmp(args[0], "history")){
-            display_history();
-            if(should_record_in_history)
-                record_history(args_str);
-            continue;
-        }
-
-        pid = fork();
-
-        //child process
-        if(pid == 0) {
-            int success = execvp(args[0], args);
-            if(success != -1 && should_record_in_history){
-                //record_history(args_str); 
-            }
-
-            exit(0);
-        } 
-        //parent process
-        else if (pid > 0) {
-
-            if(should_run_concurrent) {
-                //This flag specifies that waitpid should return immediately instead of waiting
-                waitpid(-1, &status, WNOHANG);
-            } else {
-                wait(NULL); //parent waits for child to complete
-
-            }
-        }
-        //error
-        else {
-            fprintf(stdout, "An error occured");
-            should_run = 0;
-        }
-
-        if(should_record_in_history){
-            record_history(args_str); 
-        }
+        exec_command(args_str, args, &should_run, 1);
 
         fflush(stdout);
     }
@@ -177,22 +116,77 @@ int main(void) {
     return 0;
 }
 
-    /**
-    * After reading user input, the steps are: 
-    * 1. fork a child process using fork()
-    * 2. child process will invoke int execvp (const char *file, char *const argv[]);
-    * 3. parent will invole wait() unless command included &
-    */
-    
-	// pid_t pid;	
-	// pid	= fork();
 
-	// if (pid == 0) {
-	// fork();
-	// fork();
-	// fork();
-	// } 
-	
-	// while(wait(NULL) > 0);
-	// printf("%d\n",getpid());
-	// return 0;
+void exec_command(char* args_str, char **args, int *should_run, int should_record_in_history){
+
+    int should_run_concurrent;
+    int status;
+    pid_t pid; 
+    args_str[strcspn(args_str, "\n")] = 0; //removes new line character
+    
+    // Split string into array of strings
+    int args_last_i = split_string(args_str, args);
+
+    //fprintf(stdout, "Received command: %s\n", args_str);
+    //fflush(stdout);
+
+    // Indicate if command should run concurrent
+    should_run_concurrent = 0;
+    if(!strcmp(args[args_last_i], "&")) {
+        should_run_concurrent = 1;
+        // strip ampersand from string
+        args[args_last_i] = '\0';
+    }
+
+    // Hook for executing last command
+    if(!strcmp(args[0], "!!")){
+        peek_history(args_str, should_run_concurrent);
+        // should_record_in_history = 0;
+        exec_command(args_str, args, should_run, 0);
+        return;
+    }
+
+    if(!strcmp(args[0], "exit")) {
+        *should_run = 0;
+        return;
+    }
+    if(!strcmp(args[0], "history")){
+        display_history();
+        if(should_record_in_history)
+            record_history(args_str);
+        return;
+    }
+
+    pid = fork();
+
+    //child process
+    if(pid == 0) {
+        int success = execvp(args[0], args);
+        if(success != -1 && should_record_in_history){
+            //record_history(args_str); 
+        }
+
+        exit(0);
+    } 
+    //parent process
+    else if (pid > 0) {
+
+        if(should_run_concurrent) {
+            //This flag specifies that waitpid should return immediately instead of waiting
+            waitpid(-1, &status, WNOHANG);
+        } else {
+            wait(NULL); //parent waits for child to complete
+
+        }
+    }
+    //error
+    else {
+        fprintf(stdout, "An error occured");
+        *should_run = 0;
+    }
+
+    if(should_record_in_history){
+        record_history(args_str); 
+    }
+
+}
