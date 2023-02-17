@@ -12,27 +12,41 @@ char* command_history[HISTORY_MAX_SIZE];
 int history_queue_count = 0, history_front = 0, commands_count = 0;
 
 void exec_command(char* args_str, char **args, int *should_run, int should_record_in_history);
-   
+
 int split_string(const char* str, char** args) {
     int i = 0;
-    char toSplit[128]; 
-    strcpy(toSplit, str);
-    char * token = strtok(toSplit, " ");
+    char* str_copy = malloc(strlen(str) * sizeof(char*)); 
+    strcpy(str_copy, str);
+    char * token = strtok(str_copy, " ");
     // loop through the string to extract all other tokens
     while( token != NULL ) {
-        args[i++] = token; //printing each token
+        strcpy(args[i++], token); //printing each token
         token = strtok(NULL, " ");
     }
 
+    free(str_copy);
+
+    if(i == 0) {
+        args[i + 1] = NULL;
+        return 0;
+    }
+    args[i] = NULL; //execvp requires last member of this array is a NULL pointer.
     return i - 1; // last index of args
 }
 
+void test() { 
+    char* argumentCommand[] = {"mkrdir","-pv", "test/test1/test2/test3/", NULL};
+    execvp(argumentCommand[0],argumentCommand);
+}
+
 void clear_buffers(char* str, char** args){
-    memset(str, 0, sizeof(str));
 
     for(int i = 0; i < MAX_LINE; i++) {
-        args[i] = '\0';
+        args[i] = (char*)malloc(128 * sizeof(char));
+        memset(args[i], 0, sizeof(args[i]));
+
     }
+    memset(str, 0, sizeof(str));
 }
 
 int is_history_full(){
@@ -50,12 +64,12 @@ void record_history(char* command){
             command_history[history_queue_count++],
             command
         );
-        fprintf(stdout, "stored %s (not full)\n", command);
-        fflush(stdout);
+        //fprintf(stdout, "stored %s (not full)\n", command);
+        //fflush(stdout);
     } else {
         // command_history[history_front] = command_to_record;
-        fprintf(stdout, "stored %s (is full)\n", command);
-        fflush(stdout);
+        //fprintf(stdout, "stored %s (is full)\n", command);
+        //fflush(stdout);
         strcpy(command_history[history_front], command);
         history_front = (history_front + 1) % HISTORY_MAX_SIZE;
     }
@@ -91,7 +105,9 @@ void peek_history(char* args_str, int should_run_concurrent) {
 }
 
 int main(void) {
-    char **args = malloc(MAX_LINE*sizeof(char*)); 
+
+    char** args = malloc(MAX_LINE * sizeof(char *));
+
     char *args_str = malloc(128*sizeof(char));
     int should_run = 1;
 
@@ -100,7 +116,6 @@ int main(void) {
     }
 
     while(should_run) {
-
         clear_buffers(args_str, args);
 
         fprintf(stdout, "osh > ");
@@ -111,6 +126,9 @@ int main(void) {
         exec_command(args_str, args, &should_run, 1);
 
         fflush(stdout);
+
+        for(int i = 0; i < MAX_LINE; i++)
+            free(args[i]);
     }
 
     return 0;
@@ -121,12 +139,13 @@ void exec_command(char* args_str, char **args, int *should_run, int should_recor
 
     int should_run_concurrent;
     int status;
-    pid_t pid; 
+    pid_t pid;
     args_str[strcspn(args_str, "\n")] = 0; //removes new line character
     
     // Split string into array of strings
     int args_last_i = split_string(args_str, args);
 
+    if(strlen(args_str) == 0) should_record_in_history = 0;
     //fprintf(stdout, "Received command: %s\n", args_str);
     //fflush(stdout);
 
@@ -161,11 +180,8 @@ void exec_command(char* args_str, char **args, int *should_run, int should_recor
 
     //child process
     if(pid == 0) {
-        int success = execvp(args[0], args);
-        if(success != -1 && should_record_in_history){
-            //record_history(args_str); 
-        }
-
+        execvp(args[0], args);
+        fprintf(stdout, "Error\n");
         exit(0);
     } 
     //parent process
