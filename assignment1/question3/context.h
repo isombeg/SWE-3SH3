@@ -1,13 +1,23 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
-#include "ta.h"
-#include "student.h"
+#include <semaphore.h>
+#include <stdlib.h>
+
+#define randnum(min, max) ((rand() % (int)(((max) + 1) - (min))) + (min))
+
+typedef struct __Context__ Context;
+typedef struct __Student__ Student;
+typedef struct __TeachingAssistant__ TeachingAssistant;
+typedef struct __StudentQueue__ StudentQueue;
+typedef struct __TaState__ TaState;
+typedef struct __StudentState__ StudentState;
 
 typedef struct __Context__ {
     TeachingAssistant* ta;
     StudentQueue* queue;
     Student* currentServicedStudent;
+    pthread_mutex_t* mutex;
 } Context;
 
 int is_TaBusy(Context* context);
@@ -45,5 +55,96 @@ void go_to_sleep(TeachingAssistant* ta);
 
 // Is the guard after STATE_SLEEPING
 void sleep_til_woken(TeachingAssistant* ta);
+
+/* ---------------------------- TA ---------------------------------*/
+
+typedef enum {
+    STATE_HELPING_STUDENT,
+    STATE_SLEEPING
+} TA_STATE_ID;
+
+// typedef struct __TeachingAssistant__ TeachingAssistant;
+// typedef struct __TaState__ TaState;
+
+typedef struct __TeachingAssistant__ {
+    TaState* currentState;
+    Context* context;
+    sem_t* servicingSemphr; // is signal for being dismissed from servicing
+    sem_t* sleepingSemphr; // is signal for waking up
+} TeachingAssistant;
+
+typedef struct __TaState__ {
+    TA_STATE_ID stateId;
+
+    void (*do_activity)(TeachingAssistant* ta);
+    void (*choose_next_state)(TeachingAssistant* ta);
+} TaState;
+
+extern const TaState HELPING_STUDENT_STATE;
+void help_student(TeachingAssistant* ta);
+void help_student_next(TeachingAssistant* ta);
+
+extern const TaState SLEEPING_STATE;
+void sleep();
+void sleep_next();
+
+/* ---------------------------- Student ---------------------------------*/
+
+typedef enum {
+    STATE_NO_HELP_WANTED,
+    STATE_WAKING_TA,
+    STATE_WAITING_IN_QUEUE,
+    STATE_RECEIVING_HELP,
+} STUDENT_STATE_ID;
+
+typedef struct __Student__ Student;
+typedef struct __StudentState__ StudentState;
+
+struct __Student__ {
+    StudentState* currentState;
+    Context* context;
+    sem_t* queueSemphr;
+    int studentId;
+};
+
+struct __StudentState__ {
+    STUDENT_STATE_ID stateId;
+
+    void (*do_activity)(Student* student);
+    void (*choose_next_state)(Student* student);
+};
+
+extern const StudentState NO_HELP_WANTED_STATE;
+void program(Student* student);
+void program_next(Student* student);
+
+extern const StudentState WAKING_TA_STATE;
+void wake_ta(Student* student);
+void wake_ta_next(Student* student);
+
+extern const StudentState WAITING_IN_QUEUE_STATE;
+void wait_in_queue(Student* student);
+void wait_in_queue_next(Student* student);
+
+extern const StudentState RECEIVING_HELP_STATE;
+void receive_help(Student* student);
+void receive_help_next(Student* student);
+
+/* ---------------------------- StudentQueue ---------------------------------*/
+
+typedef struct __StudentQueue__ {
+    int front;
+    int rear;
+    int count;
+    int maxSize;
+    Student** queue;
+} StudentQueue;
+
+StudentQueue* init_studentQueue(int maxSize);
+int isFull(StudentQueue* queue);
+int isEmpty(StudentQueue* queue);
+Student* peek(StudentQueue* queue);
+int enqueue(StudentQueue* queue, Student* student);
+Student* dequeue(StudentQueue* queue);
 
 #endif

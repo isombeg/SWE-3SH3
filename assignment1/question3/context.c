@@ -3,18 +3,31 @@
 #include <semaphore.h>
 #include <stddef.h>
 
+#include "student.h"
+#include "ta.h"
+
+#define lock() pthread_mutex_lock(context->mutex)
+#define unlock() pthread_mutex_unlock(context->mutex)
 // todo: wrap all race critical ops in mutexes
 
 int is_TaBusy(Context* context){
-    return context->ta->currentState == &HELPING_STUDENT_STATE;
+    lock();
+    int isTaBusy = context->ta->currentState == &HELPING_STUDENT_STATE;
+    unlock();
+    return isTaBusy;
 }
 
 void try_entering_queue(Student* student){
     int enteredQueue;
-
-    if(is_TaBusy(student->context)){
-        enteredQueue = enqueue(student->context->queue, student);
-        if(enteredQueue) student->currentState = &WAITING_IN_QUEUE_STATE;
+    Context* context = student->context;
+    
+    if(is_TaBusy(context)){
+        lock();
+        enteredQueue = enqueue(context->queue, student);
+        unlock();
+        if(enteredQueue){
+            student->currentState = &WAITING_IN_QUEUE_STATE;
+        } 
         else student->currentState = &NO_HELP_WANTED_STATE;
     } else student->currentState = &WAKING_TA_STATE;
 }
@@ -30,19 +43,29 @@ void waking_ta(Student* student){
 }
 
 void get_serviced(Student* student){
+    Context* context = student->context;
+    lock();
     student->context->currentServicedStudent = student;
+    unlock();
     student->currentState = &RECEIVING_HELP_STATE;
 }
 
 void dismiss_self(Student* student){
+    Context* context = student->context;
+    lock();
     student->context->currentServicedStudent = NULL;
-    student->currentState = &NO_HELP_WANTED_STATE;
+    unlock();
 
+    student->currentState = &NO_HELP_WANTED_STATE;
     sem_post(student->context->ta->servicingSemphr);
 }
 
 void call_next_student(TeachingAssistant* ta){
+    Context* context = ta->context;
+    lock();
     Student* nextStudent = dequeue(ta->context->queue);
+    unlock();
+
     sem_post(nextStudent->queueSemphr);
 }
 

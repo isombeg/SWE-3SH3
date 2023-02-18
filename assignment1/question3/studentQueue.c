@@ -1,4 +1,4 @@
-#include "studentQueue.h"
+#include "context.h"
 
 #include <stddef.h>
 
@@ -10,6 +10,8 @@ StudentQueue* init_studentQueue(int maxSize){
     queue->count = 0;
     queue->maxSize = 0;
     queue->queue = malloc(maxSize * sizeof(Student*));
+
+    return queue;
 }
 
 int isFull(StudentQueue* queue){
@@ -18,6 +20,10 @@ int isFull(StudentQueue* queue){
 
 int isEmpty(StudentQueue* queue){
     return queue->count == 0;
+}
+
+Student* peek(StudentQueue* queue){
+    return queue->queue[queue->front];
 }
 
 int enqueue(StudentQueue* queue, Student* student){

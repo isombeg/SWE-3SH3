@@ -1,6 +1,9 @@
-#include "ta.h"
+#include "context.h"
+
+#include <stdio.h>
 
 void help_student(TeachingAssistant* ta){
+    printf("ta: helping students\n");
     wait_for_dismissal(ta);
 }
 
@@ -11,6 +14,7 @@ void help_student_next(TeachingAssistant* ta){
 }
 
 void sleep(TeachingAssistant* ta){
+    printf("ta: sleeping");
     return;
 }
 
@@ -18,13 +22,13 @@ void sleep_next(TeachingAssistant* ta){
     sleep_til_woken(ta);
 }
 
-HELPING_STUDENT_STATE = {
+const TaState HELPING_STUDENT_STATE = {
     STATE_HELPING_STUDENT,
     help_student,
     help_student_next
 };
 
-SLEEPING_STATE = {
+const TaState SLEEPING_STATE = {
     STATE_SLEEPING,
     sleep,
     sleep_next,
