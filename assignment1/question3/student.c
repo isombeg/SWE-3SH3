@@ -2,36 +2,13 @@
 
 #include <stdio.h>
 
-const StudentState NO_HELP_WANTED_STATE = {
-    STATE_NO_HELP_WANTED,
-    program,
-    program_next
-};
-
-const StudentState WAKING_TA_STATE = {
-    STATE_WAKING_TA,
-    wake_ta,
-    wake_ta_next
-};
-
-const StudentState WAITING_IN_QUEUE_STATE = {
-    STATE_WAITING_IN_QUEUE,
-    wait_in_queue,
-    wait_in_queue_next
-};
-
-const StudentState RECEIVING_HELP_STATE = {
-    STATE_RECEIVING_HELP,
-    receive_help,
-    receive_help_next
-};
-
 void program(Student* student){
     printf("student %d: programming\n", student->studentId);
     sleep(randnum(1, 5));
 }
 
 void program_next(Student* student){
+    printf("student %d: trying to enter queue\n", student->studentId);
     try_entering_queue(student);
 }
 

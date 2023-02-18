@@ -20,6 +20,37 @@ int main()
     StudentQueue* student_queue = init_studentQueue(NUM_STUDENTS);
     Context context = {NULL, student_queue, NULL, &mutex};
 
+    // Initialize states
+    HELPING_STUDENT_STATE = malloc(sizeof(TaState));
+    HELPING_STUDENT_STATE->stateId = STATE_HELPING_STUDENT;
+    HELPING_STUDENT_STATE->do_activity = help_student;
+    HELPING_STUDENT_STATE->choose_next_state = help_student_next;
+
+    SLEEPING_STATE = malloc(sizeof(TaState));
+    SLEEPING_STATE->stateId = STATE_SLEEPING;
+    SLEEPING_STATE->do_activity = sleep;
+    SLEEPING_STATE->choose_next_state = sleep_next;
+
+    NO_HELP_WANTED_STATE = malloc(sizeof(StudentState));
+    NO_HELP_WANTED_STATE->stateId = STATE_NO_HELP_WANTED;
+    NO_HELP_WANTED_STATE->do_activity = program;
+    NO_HELP_WANTED_STATE->choose_next_state = program_next;
+
+    WAKING_TA_STATE = malloc(sizeof(StudentState));
+    WAKING_TA_STATE->stateId = STATE_WAKING_TA;
+    WAKING_TA_STATE->do_activity = wake_ta;
+    WAKING_TA_STATE->choose_next_state = wake_ta_next;
+
+    WAITING_IN_QUEUE_STATE = malloc(sizeof(StudentState));
+    WAITING_IN_QUEUE_STATE->stateId = STATE_WAITING_IN_QUEUE;
+    WAITING_IN_QUEUE_STATE->do_activity = wait_in_queue;
+    WAITING_IN_QUEUE_STATE->choose_next_state = wait_in_queue_next;
+
+    RECEIVING_HELP_STATE = malloc(sizeof(StudentState));
+    RECEIVING_HELP_STATE->stateId = STATE_RECEIVING_HELP;
+    RECEIVING_HELP_STATE->do_activity = receive_help;
+    RECEIVING_HELP_STATE->choose_next_state = receive_help_next;
+
     student_id_counter = 0;
 
     pthread_mutex_init(&mutex, NULL);
@@ -48,7 +79,7 @@ void* student_fsm(void* ctx) {
     sem_init(&queueSemphr, 0, 1);
     //create a student
     Student student = {
-        &NO_HELP_WANTED_STATE,
+        NO_HELP_WANTED_STATE,
         context,
         &queueSemphr,
         student_id_counter++
@@ -64,8 +95,9 @@ void* student_fsm(void* ctx) {
 }
 
 void* ta_fsm(void* ctx) {
-    printf("here");
     Context* context = (Context*)ctx;
+    pthread_mutex_lock(context->mutex);
+    printf("here\n");
     sem_t servicingSemphr;
     sem_t sleepingSemphr;
     sem_init(&servicingSemphr, 0, 1);
@@ -74,13 +106,12 @@ void* ta_fsm(void* ctx) {
 
     //create TA
     TeachingAssistant ta = {
-        &SLEEPING_STATE, 
+        SLEEPING_STATE, 
         context, 
         &servicingSemphr, 
         &sleepingSemphr
     };
 
-    pthread_mutex_lock(context->mutex);
     context->ta = &ta;
     pthread_mutex_unlock(context->mutex);
 

@@ -14,22 +14,10 @@ void help_student_next(TeachingAssistant* ta){
 }
 
 void sleep(TeachingAssistant* ta){
-    printf("ta: sleeping");
+    printf("ta: sleeping\n");
     return;
 }
 
 void sleep_next(TeachingAssistant* ta){
     sleep_til_woken(ta);
 }
-
-const TaState HELPING_STUDENT_STATE = {
-    STATE_HELPING_STUDENT,
-    help_student,
-    help_student_next
-};
-
-const TaState SLEEPING_STATE = {
-    STATE_SLEEPING,
-    sleep,
-    sleep_next,
-};

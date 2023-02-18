@@ -67,7 +67,7 @@ typedef enum {
 // typedef struct __TaState__ TaState;
 
 typedef struct __TeachingAssistant__ {
-    const TaState* currentState;
+    TaState* currentState;
     Context* context;
     sem_t* servicingSemphr; // is signal for being dismissed from servicing
     sem_t* sleepingSemphr; // is signal for waking up
@@ -80,11 +80,11 @@ typedef struct __TaState__ {
     void (*choose_next_state)(TeachingAssistant* ta);
 } TaState;
 
-extern const TaState HELPING_STUDENT_STATE;
+TaState* HELPING_STUDENT_STATE;
 void help_student(TeachingAssistant* ta);
 void help_student_next(TeachingAssistant* ta);
 
-extern const TaState SLEEPING_STATE;
+TaState* SLEEPING_STATE;
 void sleep();
 void sleep_next();
 
@@ -101,7 +101,7 @@ typedef struct __Student__ Student;
 typedef struct __StudentState__ StudentState;
 
 struct __Student__ {
-    const StudentState* currentState;
+    StudentState* currentState;
     Context* context;
     sem_t* queueSemphr;
     int studentId;
@@ -114,19 +114,19 @@ struct __StudentState__ {
     void (*choose_next_state)(Student* student);
 };
 
-extern const StudentState NO_HELP_WANTED_STATE;
+StudentState* NO_HELP_WANTED_STATE;
 void program(Student* student);
 void program_next(Student* student);
 
-extern const StudentState WAKING_TA_STATE;
+StudentState* WAKING_TA_STATE;
 void wake_ta(Student* student);
 void wake_ta_next(Student* student);
 
-extern const StudentState WAITING_IN_QUEUE_STATE;
+StudentState* WAITING_IN_QUEUE_STATE;
 void wait_in_queue(Student* student);
 void wait_in_queue_next(Student* student);
 
-extern const StudentState RECEIVING_HELP_STATE;
+StudentState* RECEIVING_HELP_STATE;
 void receive_help(Student* student);
 void receive_help_next(Student* student);
 
