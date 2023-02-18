@@ -1,10 +1,8 @@
 #include "context.h"
 
 #include <semaphore.h>
+#include <pthread.h>
 #include <stddef.h>
-
-#include "student.h"
-#include "ta.h"
 
 #define lock() pthread_mutex_lock(context->mutex)
 #define unlock() pthread_mutex_unlock(context->mutex)

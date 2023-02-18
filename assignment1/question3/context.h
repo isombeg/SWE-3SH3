@@ -67,7 +67,7 @@ typedef enum {
 // typedef struct __TaState__ TaState;
 
 typedef struct __TeachingAssistant__ {
-    TaState* currentState;
+    const TaState* currentState;
     Context* context;
     sem_t* servicingSemphr; // is signal for being dismissed from servicing
     sem_t* sleepingSemphr; // is signal for waking up
@@ -101,7 +101,7 @@ typedef struct __Student__ Student;
 typedef struct __StudentState__ StudentState;
 
 struct __Student__ {
-    StudentState* currentState;
+    const StudentState* currentState;
     Context* context;
     sem_t* queueSemphr;
     int studentId;

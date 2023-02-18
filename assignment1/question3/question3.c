@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include "context.h"
 #include <stddef.h>
+#include <stdio.h>
 
 #define NUM_STUDENTS 5
 
@@ -17,18 +18,18 @@ int main()
 {
     pthread_mutex_t mutex;
     StudentQueue* student_queue = init_studentQueue(NUM_STUDENTS);
-    Context* context = {NULL, student_queue, NULL, &mutex};
+    Context context = {NULL, student_queue, NULL, &mutex};
 
     student_id_counter = 0;
 
     pthread_mutex_init(&mutex, NULL);
 
     pthread_attr_init(&attr);
-    pthread_create(&ta, &attr, ta_fsm, (void*)context);
+    pthread_create(&ta, &attr, ta_fsm, (void*)&context);
 
 	for(int i = 0; i < NUM_STUDENTS; i++) {		
 		pthread_attr_init(&attr);
-		pthread_create(&student[i], &attr, student_fsm, (void*)context);
+		pthread_create(&student[i], &attr, student_fsm, (void*)&context);
 	}
     
     pthread_join(ta, NULL);
@@ -63,6 +64,7 @@ void* student_fsm(void* ctx) {
 }
 
 void* ta_fsm(void* ctx) {
+    printf("here");
     Context* context = (Context*)ctx;
     sem_t servicingSemphr;
     sem_t sleepingSemphr;
@@ -77,6 +79,10 @@ void* ta_fsm(void* ctx) {
         &servicingSemphr, 
         &sleepingSemphr
     };
+
+    pthread_mutex_lock(context->mutex);
+    context->ta = &ta;
+    pthread_mutex_unlock(context->mutex);
 
     while(1){
         //current state do action
