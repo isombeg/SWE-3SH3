@@ -26,17 +26,32 @@ RECEIVING_HELP_STATE = {
 
 void program(Student* student){
     // todo: wait random amount of time
-
-    student->context->isTaBusy;
 }
 
 void program_next(Student* student){
-    int entered_queue;
-
-    if(student->check_if_ta_busy(student)){
-        entered_queue = student->enter_queue(student);
-        if(entered_queue) student->currentState = WAITING_IN_QUEUE_STATE;
-        else student->currentState = NO_HELP_WANTED_STATE;
-    } else student->currentState = WAKING_TA_STATE;
+    try_entering_queue(student);
 }
 
+void wake_ta(Student* student){
+    waking_ta(student);
+}
+
+void wake_ta_next(Student* student){
+    get_serviced(student);
+}
+
+void wait_in_queue(Student* student){
+    return;
+}
+
+void wait_in_queue_next(Student* student){
+    wait_until_called(student);
+}
+
+void receive_help(Student* student){
+    // todo: wait for random period of time
+}
+
+void receive_help_next(Student* student){
+    dismiss_self(student);
+}

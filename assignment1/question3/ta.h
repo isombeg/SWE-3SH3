@@ -24,8 +24,10 @@ void sleep();
 void sleep_next();
 
 typedef struct __TeachingAssistant__ {
-    TaState currentState;
-    StudentQueue* queue;
+    TaState* currentState;
+    Context* context;
+    sem_t* servicingSemphr;
+    sem_t* sleepingSemphr;
 } TeachingAssistant;
 
 #endif

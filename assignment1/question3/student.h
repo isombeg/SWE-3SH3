@@ -1,6 +1,7 @@
 #ifndef STUDENT_H
 #define STUDENT_H
 
+#include <semaphore.h>
 #include "context.h"
 
 typedef enum {
@@ -36,9 +37,7 @@ void receive_help_next(Student* student);
 typedef struct {
     StudentState* currentState;
     Context* context;
-
-    int (*check_if_ta_busy)(Student* student);
-    int (*enter_queue)(Student* student);
+    sem_t* queueSemphr;
 } Student;
 
 #endif

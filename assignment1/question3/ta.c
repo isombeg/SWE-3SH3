@@ -1,16 +1,13 @@
 #include "ta.h"
 
 void help_student(TeachingAssistant* ta){
-    // call next student
-    ta->queue->callNextStudent(ta->queue);
-
-    // todo: help student for random time
+    wait_for_dismissal(ta);
 }
 
 void help_student_next(TeachingAssistant* ta){
-    if(!ta->queue->hasStudent(ta->queue)){
-        ta->currentState = HELPING_STUDENT_STATE;
-    } else ta->currentState = SLEEPING_STATE;
+    if(are_students_waiting(ta)){
+        call_next_student(ta);
+    } else go_to_sleep(ta);
 }
 
 void sleep(TeachingAssistant* ta){
@@ -18,10 +15,7 @@ void sleep(TeachingAssistant* ta){
 }
 
 void sleep_next(TeachingAssistant* ta){
-    // todo: take smphr
-
-    // transitition to STATE_HELPING_STUDENT
-    ta->currentState = HELPING_STUDENT_STATE;
+    sleep_til_woken(ta);
 }
 
 HELPING_STUDENT_STATE = {
