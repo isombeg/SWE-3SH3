@@ -1,57 +1,45 @@
-#include "student.h"
+#include "context.h"
 
-NO_HELP_WANTED_STATE = {
-    STATE_NO_HELP_WANTED,
-    program,
-    program_next
-};
-
-WAKING_TA_STATE = {
-    STATE_WAKING_TA,
-    wake_ta,
-    wake_ta_next
-};
-
-WAITING_IN_QUEUE_STATE = {
-    STATE_WAITING_IN_QUEUE,
-    wait_in_queue,
-    wait_in_queue_next
-};
-
-RECEIVING_HELP_STATE = {
-    STATE_RECEIVING_HELP,
-    receive_help,
-    receive_help_next
-};
+#include <stdio.h>
+#include <unistd.h>
 
 void program(Student* student){
-    // todo: wait random amount of time
+    printf("student %d: programming\n", student->studentId);
+    sleep(randnum(2, 5));
 }
 
 void program_next(Student* student){
+    printf("student %d: trying to enter queue\n", student->studentId);
     try_entering_queue(student);
 }
 
 void wake_ta(Student* student){
+    printf("student %d: waking TA\n", student->studentId);
     waking_ta(student);
 }
 
 void wake_ta_next(Student* student){
     get_serviced(student);
+    printf("student %d: now getting serviced\n", student->studentId);
 }
 
 void wait_in_queue(Student* student){
+    printf("student %d: waiting in queue\n", student->studentId);
     return;
 }
 
 void wait_in_queue_next(Student* student){
     wait_until_called(student);
+    printf("student %d: called by ta\n", student->studentId);
 }
 
 void receive_help(Student* student){
-    // todo: wait for random period of time
+    printf("student %d: receiving help\n", student->studentId);
+    // wait for random period of time
+    sleep(randnum(1, 5));
 }
 
 void receive_help_next(Student* student){
     dismiss_self(student);
+    printf("student %d: dismissed ta\n", student->studentId);
 }
