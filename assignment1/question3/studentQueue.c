@@ -1,6 +1,7 @@
 #include "context.h"
 
 #include <stddef.h>
+#include <stdio.h>
 
 // todo: write queue functionality
 StudentQueue* init_studentQueue(int maxSize){
@@ -8,7 +9,7 @@ StudentQueue* init_studentQueue(int maxSize){
     queue->front = 0;
     queue->rear = 0;
     queue->count = 0;
-    queue->maxSize = 0;
+    queue->maxSize = maxSize;
     queue->queue = malloc(maxSize * sizeof(Student*));
 
     return queue;
@@ -27,6 +28,7 @@ Student* peek(StudentQueue* queue){
 }
 
 int enqueue(StudentQueue* queue, Student* student){
+    printf("queue: %d student waiting (max allowed = %d)", queue->count, queue->maxSize);
     if(isFull(queue)){
         return 0;
     }
@@ -44,6 +46,7 @@ Student* dequeue(StudentQueue* queue){
     
     Student* rslt = peek(queue);
     queue->front = (queue->front + 1) % queue->maxSize;
+    queue->count--;
 
     return rslt;
 }

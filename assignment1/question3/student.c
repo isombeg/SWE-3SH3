@@ -1,10 +1,11 @@
 #include "context.h"
 
 #include <stdio.h>
+#include <unistd.h>
 
 void program(Student* student){
     printf("student %d: programming\n", student->studentId);
-    sleep(randnum(1, 5));
+    sleep(randnum(2, 5));
 }
 
 void program_next(Student* student){
@@ -19,6 +20,7 @@ void wake_ta(Student* student){
 
 void wake_ta_next(Student* student){
     get_serviced(student);
+    printf("student %d: now getting serviced\n", student->studentId);
 }
 
 void wait_in_queue(Student* student){
@@ -28,14 +30,16 @@ void wait_in_queue(Student* student){
 
 void wait_in_queue_next(Student* student){
     wait_until_called(student);
+    printf("student %d: called by ta\n", student->studentId);
 }
 
 void receive_help(Student* student){
-    printf("receiving %d: help\n", student->studentId);
+    printf("student %d: receiving help\n", student->studentId);
     // wait for random period of time
     sleep(randnum(1, 5));
 }
 
 void receive_help_next(Student* student){
     dismiss_self(student);
+    printf("student %d: dismissed ta\n", student->studentId);
 }

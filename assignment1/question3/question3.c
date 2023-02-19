@@ -3,7 +3,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#define NUM_STUDENTS 5
+#define NUM_STUDENTS 4
+#define MAX_STUDENTS 3
 
 pthread_t student[NUM_STUDENTS];
 pthread_t ta;
@@ -17,7 +18,7 @@ volatile int student_id_counter;
 int main()
 {
     pthread_mutex_t mutex;
-    StudentQueue* student_queue = init_studentQueue(NUM_STUDENTS);
+    StudentQueue* student_queue = init_studentQueue(MAX_STUDENTS);
     Context context = {NULL, student_queue, NULL, &mutex};
 
     // Initialize states
@@ -28,8 +29,8 @@ int main()
 
     SLEEPING_STATE = malloc(sizeof(TaState));
     SLEEPING_STATE->stateId = STATE_SLEEPING;
-    SLEEPING_STATE->do_activity = sleep;
-    SLEEPING_STATE->choose_next_state = sleep_next;
+    SLEEPING_STATE->do_activity = ta_go_to_sleep;
+    SLEEPING_STATE->choose_next_state = ta_go_to_sleep_next;
 
     NO_HELP_WANTED_STATE = malloc(sizeof(StudentState));
     NO_HELP_WANTED_STATE->stateId = STATE_NO_HELP_WANTED;
@@ -56,6 +57,7 @@ int main()
     pthread_mutex_init(&mutex, NULL);
 
     pthread_attr_init(&attr);
+    pthread_mutex_lock(&mutex);
     pthread_create(&ta, &attr, ta_fsm, (void*)&context);
 
 	for(int i = 0; i < NUM_STUDENTS; i++) {		
@@ -95,8 +97,8 @@ void* student_fsm(void* ctx) {
 }
 
 void* ta_fsm(void* ctx) {
+    printf("creating ta thread\n");
     Context* context = (Context*)ctx;
-    pthread_mutex_lock(context->mutex);
     printf("here\n");
     sem_t servicingSemphr;
     sem_t sleepingSemphr;
@@ -105,22 +107,21 @@ void* ta_fsm(void* ctx) {
 
 
     //create TA
-    TeachingAssistant ta = {
-        SLEEPING_STATE, 
-        context, 
-        &servicingSemphr, 
-        &sleepingSemphr
-    };
+    TeachingAssistant* ta = malloc(sizeof(TeachingAssistant));
+    ta->currentState = SLEEPING_STATE;
+    ta->context = context;
+    ta->servicingSemphr = &servicingSemphr;
+    ta->sleepingSemphr = &sleepingSemphr;
 
-    context->ta = &ta;
+    context->ta = ta;
     pthread_mutex_unlock(context->mutex);
 
     while(1){
         //current state do action
-        ta.currentState->do_activity(&ta);
+        ta->currentState->do_activity(ta);
         
         //current state do next action
-        ta.currentState->choose_next_state(&ta);
+        ta->currentState->choose_next_state(ta);
     }
 }
 

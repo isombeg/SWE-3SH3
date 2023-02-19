@@ -11,7 +11,6 @@
 
 int is_TaBusy(Context* context){
     lock();
-    printf("checking if ta busy\n");
     int isTaBusy = context->ta->currentState == HELPING_STUDENT_STATE;
     unlock();
     return isTaBusy;
@@ -22,14 +21,22 @@ void try_entering_queue(Student* student){
     Context* context = student->context;
     
     if(is_TaBusy(context)){
+        printf("ta was busy\n");
         lock();
         enteredQueue = enqueue(context->queue, student);
         unlock();
         if(enteredQueue){
+            printf("Entered queue\n");
             student->currentState = WAITING_IN_QUEUE_STATE;
         } 
-        else student->currentState = NO_HELP_WANTED_STATE;
-    } else student->currentState = WAKING_TA_STATE;
+        else {
+            printf("couldn't enter queue\n");
+            student->currentState = NO_HELP_WANTED_STATE;
+        }
+    } else {
+        printf("ta was not busy\n");
+        student->currentState = WAKING_TA_STATE;
+    }
 }
 
 void wait_until_called(Student* student){

@@ -85,8 +85,8 @@ void help_student(TeachingAssistant* ta);
 void help_student_next(TeachingAssistant* ta);
 
 TaState* SLEEPING_STATE;
-void sleep();
-void sleep_next();
+void ta_go_to_sleep();
+void ta_go_to_sleep_next();
 
 /* ---------------------------- Student ---------------------------------*/
 
