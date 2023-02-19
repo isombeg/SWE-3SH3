@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "student.h": "c",
+        "studentqueue.h": "c",
+        "chrono": "c",
+        "limits": "c",
+        "random": "c",
+        "ratio": "c",
+        "algorithm": "c",
+        "context.h": "c"
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools"
+}
