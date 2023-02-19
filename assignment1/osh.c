@@ -13,8 +13,19 @@ int history_queue_count = 0, history_front = 0, commands_count = 0;
 
 void exec_command(char* args_str, char **args, int *should_run, int should_record_in_history);
 
+void free_and_allocate(char ** args) {
+    for(int i = 0; i < MAX_LINE; i++)
+        free(args[i]);
+
+    for(int i = 0; i < MAX_LINE; i++) {
+        args[i] = (char*)malloc(128 * sizeof(char));
+        memset(args[i], 0, sizeof(args[i]));
+    }
+}
+
 int split_string(const char* str, char** args) {
     int i = 0;
+    free_and_allocate(args);
     char* str_copy = malloc(strlen(str) * sizeof(char*)); 
     strcpy(str_copy, str);
     char * token = strtok(str_copy, " ");
@@ -34,42 +45,15 @@ int split_string(const char* str, char** args) {
     return i - 1; // last index of args
 }
 
-void test() { 
-    char* argumentCommand[] = {"mkrdir","-pv", "test/test1/test2/test3/", NULL};
-    execvp(argumentCommand[0],argumentCommand);
-}
-
-void clear_buffers(char* str, char** args){
-
-    for(int i = 0; i < MAX_LINE; i++) {
-        args[i] = (char*)malloc(128 * sizeof(char));
-        memset(args[i], 0, sizeof(args[i]));
-
-    }
-    memset(str, 0, sizeof(str));
-}
-
 int is_history_full(){
     return history_queue_count == HISTORY_MAX_SIZE;
 }
 
 void record_history(char* command){
     
-    // char* command_to_record = (char*) malloc((strlen(command) + 1) * sizeof(char)); /*+1 for '\0' character */
-    // strcpy(command_to_record, command);
-
-    if(!is_history_full()){
-        // command_history[history_queue_count++] = command_to_record;
-        strcpy(
-            command_history[history_queue_count++],
-            command
-        );
-        //fprintf(stdout, "stored %s (not full)\n", command);
-        //fflush(stdout);
-    } else {
-        // command_history[history_front] = command_to_record;
-        //fprintf(stdout, "stored %s (is full)\n", command);
-        //fflush(stdout);
+    if(!is_history_full())
+        strcpy(command_history[history_queue_count++], command );
+    else {
         strcpy(command_history[history_front], command);
         history_front = (history_front + 1) % HISTORY_MAX_SIZE;
     }
@@ -77,30 +61,28 @@ void record_history(char* command){
 }
 
 void display_history(){
-    for(
-        int i = 0;
-        i < history_queue_count;
-        i++
-    ){
-        if(is_history_full()){
+    for(int i = 0; i < history_queue_count; i++)
+    {
+        if(is_history_full())
             fprintf(stdout, "%d %s\n", commands_count - i, command_history[((history_front - i - 1) + HISTORY_MAX_SIZE) % HISTORY_MAX_SIZE]);
-        } else {
+        else
             fprintf(stdout, "%d %s\n", commands_count - i, command_history[history_queue_count - i - 1]);
-        }
     }
     fflush(stdout);
 }
 
 void peek_history(char* args_str, int should_run_concurrent) {
-    if(history_queue_count == 0) {
-        //split_string("echo No commands in history.", args);
+    if(history_queue_count == 0)
         strcpy(args_str, "echo No commands in history.");
-   } else {
-        //split_string(command_history[(history_front + history_queue_count) % 5 - 1], args);
-        strcpy(args_str, command_history[(history_front + history_queue_count) % 5 - 1]);
-        if(should_run_concurrent){
-            strcat(args_str, " &");
+    else {
+        if(!is_history_full()) {
+            strcpy(args_str, command_history[history_queue_count - 1]);
         }
+        else {
+            strcpy(args_str, command_history[(history_front + HISTORY_MAX_SIZE - 1) % HISTORY_MAX_SIZE]);
+        }
+        if(should_run_concurrent)
+            strcat(args_str, " &");
     }
 }
 
@@ -116,7 +98,7 @@ int main(void) {
     }
 
     while(should_run) {
-        clear_buffers(args_str, args);
+        memset(args_str, 0, sizeof(args_str)); //clears arg str
 
         fprintf(stdout, "osh > ");
         fflush(stdout);
@@ -126,9 +108,6 @@ int main(void) {
         exec_command(args_str, args, &should_run, 1);
 
         fflush(stdout);
-
-        for(int i = 0; i < MAX_LINE; i++)
-            free(args[i]);
     }
 
     return 0;
@@ -145,9 +124,8 @@ void exec_command(char* args_str, char **args, int *should_run, int should_recor
     // Split string into array of strings
     int args_last_i = split_string(args_str, args);
 
-    if(strlen(args_str) == 0) should_record_in_history = 0;
-    //fprintf(stdout, "Received command: %s\n", args_str);
-    //fflush(stdout);
+    if(strlen(args_str) == 0) 
+        should_record_in_history = 0;
 
     // Indicate if command should run concurrent
     should_run_concurrent = 0;
@@ -187,13 +165,10 @@ void exec_command(char* args_str, char **args, int *should_run, int should_recor
     //parent process
     else if (pid > 0) {
 
-        if(should_run_concurrent) {
-            //This flag specifies that waitpid should return immediately instead of waiting
-            waitpid(-1, &status, WNOHANG);
-        } else {
-            wait(NULL); //parent waits for child to complete
-
-        }
+        if(should_run_concurrent)
+            waitpid(pid, &status, WNOHANG);
+        else
+            waitpid(pid, &status, 0);
     }
     //error
     else {
@@ -201,13 +176,6 @@ void exec_command(char* args_str, char **args, int *should_run, int should_recor
         *should_run = 0;
     }
 
-    if(should_record_in_history){
+    if(should_record_in_history)
         record_history(args_str); 
-    }
-
 }
-
-//FAILED
-//mkdir -pv test/test1/test2/test3/
-//touch test/hi.txt test/test1/bye.txt
-//gcc shell.c -o testcase
