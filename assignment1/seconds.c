@@ -6,10 +6,11 @@
 #include <linux/jiffies.h>
 
 #define BUFFER_SIZE 128
-
 #define PROC_NAME "seconds"
 
-// Global vars
+ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, loff_t *pos);
+
+// Global variable that keeps track of ticks
 unsigned long init_jiffies;
 
 static struct file_operations proc_ops = {
@@ -18,6 +19,7 @@ static struct file_operations proc_ops = {
 };
 
 int proc_init(void){
+
     // gets jiffies at initialization
     init_jiffies = jiffies;
     
@@ -39,20 +41,14 @@ void proc_exit(void){
 }
 
 
-/**
- * This function is called each time the /proc/seconds is read.
- * 
- * This function is called repeatedly until it returns 0, so
- * there must be logic that ensures it ultimately returns 0
- * once it has collected the data that is to go into the 
- * corresponding /proc file.
-
- */
+ //This function is called each time the /proc/seconds is read.
 ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, loff_t *pos){
-    // todo: display time elapsed
     int rv = 0;
     char buffer[BUFFER_SIZE];
     static int completed = 0;
+        
+    // compute time elapsed
+    unsigned long time_elapsed = (jiffies - init_jiffies)/HZ;
 
     if (completed) {
             completed = 0;
@@ -60,12 +56,8 @@ ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, loff_t 
     }
 
     completed = 1;
-    
-    // compute time elapsed
-    unsigned long time_elapsed = (jiffies - init_jiffies)/HZ;
-    
 
-    rv = sprintf(buffer, "Seconds elapsed %lu\n", );
+    rv = sprintf(buffer, "Seconds elapsed %lu\n", time_elapsed);
 
     // copies the contents of buffer to userspace usr_buf
     copy_to_user(usr_buf, buffer, rv);
