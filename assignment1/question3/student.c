@@ -9,7 +9,7 @@ void program(Student* student){
 }
 
 void program_next(Student* student){
-    printf("student %d: trying to enter queue\n", student->studentId);
+    printf("student %d: needs help\n", student->studentId);
     try_entering_queue(student);
 }
 

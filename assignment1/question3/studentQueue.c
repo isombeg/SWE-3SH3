@@ -28,7 +28,7 @@ Student* peek(StudentQueue* queue){
 }
 
 int enqueue(StudentQueue* queue, Student* student){
-    printf("queue: %d student waiting (max allowed = %d)", queue->count, queue->maxSize);
+    //printf("queue: %d student waiting (max allowed = %d)", queue->count, queue->maxSize);
     if(isFull(queue)){
         return 0;
     }

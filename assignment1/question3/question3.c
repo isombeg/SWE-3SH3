@@ -78,7 +78,7 @@ void* student_fsm(void* ctx) {
     Context* context = (Context*)ctx;
 
     sem_t queueSemphr;
-    sem_init(&queueSemphr, 0, 1);
+    sem_init(&queueSemphr, 0, 0); //initially 0 until TA calls student. 
     //create a student
     Student student = {
         NO_HELP_WANTED_STATE,
@@ -97,13 +97,11 @@ void* student_fsm(void* ctx) {
 }
 
 void* ta_fsm(void* ctx) {
-    printf("creating ta thread\n");
     Context* context = (Context*)ctx;
-    printf("here\n");
     sem_t servicingSemphr;
     sem_t sleepingSemphr;
-    sem_init(&servicingSemphr, 0, 1);
-    sem_init(&sleepingSemphr, 0, 1);
+    sem_init(&servicingSemphr, 0, 0);
+    sem_init(&sleepingSemphr, 0, 0); //initially 0 until changed by student
 
 
     //create TA
