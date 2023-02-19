@@ -10,7 +10,7 @@
 
 ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, loff_t *pos);
 
-// Global variable that keeps track of ticks
+// Global variable that keeps track of initial jiffies
 unsigned long init_jiffies;
 
 static struct file_operations proc_ops = {
