@@ -111,7 +111,6 @@ int main() {
         int physical_addr = (frame_num << OFFSET_BITS) | page_offset;
         
         fprintf(f_out, "Virtual address: %d Physical address = %d Value=%d \n", logical_addr, physical_addr, physical_memory[physical_addr]);
-        //printf("Page Num: %d Frame Num: %d Virtual address: %d Physical address = %d Value=%d \n", page_num, frame_num, logical_addr, physical_addr, physical_memory[physical_addr]);
     } 
     fprintf(f_out, "Total addresses = %d \nPage_Faults = %d \nTLB Hits = %d \n", addresses, page_faults, tlb_hits);
     fclose(f_out);
