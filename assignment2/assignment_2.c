@@ -10,7 +10,7 @@
 #define OFFSET_MASK 0xFF //Lower 8 bits represent offset
 #define OFFSET_BITS 8 //2^8 = 256. Since page size = 256
 #define PAGE_SIZE 256 //Given in assignment doc
-#define PAGES 256
+#define PAGE_COUNT 256
 
 #define MEMORY_SIZE 32768
 
@@ -20,10 +20,45 @@ int page_table[PAGES] = {-1};
 int pm_ptr = 0; //pointer to physical memory
 char physical_memory[MEMORY_SIZE] = {-1}; //init all to -1
 
+typedef struct {
+    int page_num, frame_num;
+} TLBEntry_t ;
+
+typedef struct {
+    TLBEntry_t frame[PAGE_COUNT];
+    int next_entry;
+} Tlb;
+
+typedef TLBLookupResult_t enum {TLB_MISS, TLB_HIT};
+
+/**************** TLB Functionality ****************/
 
 int tlb_lookup(int page_num) {
     //implement TLB STUFF
     return 0;
+}
+
+int search_tlb(Tlb* tlb, int page_num){
+    for(int i = 0, i < PAGE_COUNT; i++){
+        if(tlb->frame[i].page_num == page_num){
+            return tlb->frame[i].frame_num;
+        }
+    }
+
+    return -1;
+}
+
+void add_tlb(Tlb* tlb, int page_num, int frame_num){
+    tlb->frame[tlb->next_entry++] = {page_num, frame_num};
+    tlb->next_entry %= PAGE_COUNT;
+}
+
+void update_tlb(Tlb* tlb, int page_num, int frame_num){
+    for(int i = 0, i < PAGE_COUNT; i++){
+        if(tlb->frame[i].page_num == page_num){
+            tlb->frame[i].frame_num = frame_num;
+        }
+    }
 }
 
 int get_available_frame(int page_num) {
