@@ -8,6 +8,13 @@
 int requests[MAX_REQUESTS];
 int sorted_requests[MAX_REQUESTS];
 
+int scan_one_dir(FILE* fptr, int initial_head, int start_pos_idx, int total_head_movements, const char* direction, int requests[]);
+int scan_opposite_dir(FILE* fptr, int start_pos_idx, int total_head_movements, const char* direction, int requests[], int start_from_extreme);
+int scan_from_extreme_to_start(FILE* fptr, int initial_head, int start_pos_idx, int total_head_movements, const char* direction, int requests[]);
+int scan_left(FILE* fptr, int initial_head, int start_pos_idx, int end_pos_idx, int total_head_movements, int requests[]);
+int scan_right(FILE* fptr, int initial_head, int start_pos_idx, int end_pos_idx, int total_head_movements, int requests[]);
+int find_start_pos(int initial_head, const char* direction, int requests[]);
+int record_movement_to_extreme(int total_head_movements, const char* direction, int requests[]);
 
 void fcfs(FILE* fptr, int initial_head, int requests[]) {
     int curr_head = initial_head;
@@ -52,6 +59,96 @@ void sstf(FILE* fptr, int initial_head, int requests[]) {
         requests_served++;
     }
     fprintf(fptr, "\n\nSSTF - Total head movements = %d \n\n", total_head_movements);   
+}
+
+void scan(FILE* fptr, int initial_head, const char* direction, int requests[]){
+    fprintf(fptr, "SCAN DISK SCHEDULING ALGORITHM: \n\n");
+    // Find starting point
+    int start_pos_idx = find_start_pos(initial_head, direction, requests);
+
+    int total_head_movements = 0;
+    // Scan all the way to extremity
+    total_head_movements = scan_one_dir(fptr, initial_head, start_pos_idx, total_head_movements, direction, requests);
+    // move to the end of the disk
+//    total_head_movements = record_movement_to_extreme(total_head_movements, direction, requests);
+
+    // Scan to next extremity
+    total_head_movements = scan_opposite_dir(fptr, start_pos_idx, total_head_movements, direction, requests, 1);
+
+    fprintf(fptr, "\n\nSCAN - Total head movements = %d \n\n", total_head_movements);
+
+}
+
+int record_movement_to_extreme(int total_head_movements, const char* direction, int requests[]){
+    if(strcmp(direction, "LEFT") == 0){
+        return total_head_movements + abs(requests[0]);
+    } else {
+        return total_head_movements + abs(CYLINDER_MAX - requests[MAX_REQUESTS]);
+    }
+}
+
+int scan_one_dir(FILE* fptr, int initial_head, int start_pos_idx, int total_head_movements, const char* direction, int requests[]){
+    if(strcmp(direction, "LEFT") == 0){
+        //go all the way left from starting point
+        return scan_left(fptr, initial_head, start_pos_idx, 0, total_head_movements, requests);
+    } else {
+        return scan_right(fptr, initial_head, start_pos_idx, MAX_REQUESTS-1, total_head_movements, requests);
+    }
+}
+
+int scan_opposite_dir(FILE* fptr, int start_pos_idx, int total_head_movements, const char* direction, int requests[], int start_from_extreme){
+    int initial_head;
+    if(strcmp(direction, "LEFT") == 0){
+        initial_head = start_from_extreme ? 0 : requests[0];
+        total_head_movements += start_from_extreme ? abs(requests[0] - 0) : 0;
+        //go all the way right from starting point
+        return scan_right(fptr, initial_head, start_pos_idx+1, MAX_REQUESTS-1, total_head_movements, requests);
+    } else {
+        initial_head = start_from_extreme ? CYLINDER_MAX : requests[MAX_REQUESTS-1];
+        total_head_movements += start_from_extreme ? abs(requests[MAX_REQUESTS-1] - CYLINDER_MAX) : 0;
+        return scan_left(fptr, initial_head, start_pos_idx-1, 0, total_head_movements, requests);
+    }
+}
+
+int scan_left(FILE* fptr, int initial_head, int start_pos_idx, int end_pos_idx, int total_head_movements, int requests[]){
+    int curr_head = initial_head;
+    for(int i = start_pos_idx; i >= end_pos_idx; i--) {
+        total_head_movements += abs(curr_head - requests[i]);
+        curr_head = requests[i];
+        fprintf(fptr, "%d, ", requests[i]);
+    }
+    return total_head_movements;
+}
+
+int scan_right(FILE* fptr, int initial_head, int start_pos_idx, int end_pos_idx, int total_head_movements, int requests[]){
+    int curr_head = initial_head;
+    //go all the way right from starting point
+    for(int i = start_pos_idx; i <= end_pos_idx; i++) {
+        total_head_movements += abs(curr_head - requests[i]);
+        curr_head = requests[i];
+        fprintf(fptr, "%d, ", requests[i]);
+    }
+    return total_head_movements;
+}
+
+int find_start_pos(int initial_head, const char* direction, int requests[]){
+    int init_pos_idx;
+    if(strcmp(direction, "LEFT") == 0) {
+        //first find starting point (first request that is smaller than our initial head)
+        for (init_pos_idx = MAX_REQUESTS - 1; init_pos_idx >= 0; init_pos_idx--) {
+            if (requests[init_pos_idx] <= initial_head) {
+                break;
+            }
+        }
+    } else {
+        for(init_pos_idx = 0; init_pos_idx < MAX_REQUESTS; init_pos_idx++) {
+            if(requests[init_pos_idx] >= initial_head) {
+                break;
+            }
+        }
+    }
+
+    return init_pos_idx;
 }
 
 void c_scan(FILE* fptr, int initial_head, const char* direction, int requests[]) {
@@ -144,6 +241,46 @@ void sort_requests(int requests[], int sorted_requests[], int len) {
     }
 }
 
+void look(FILE* fptr, int initial_head, const char* direction, int requests[]){
+    fprintf(fptr, "LOOK DISK SCHEDULING ALGORITHM: \n\n");
+    // Find starting point
+    int start_pos_idx = find_start_pos(initial_head, direction, requests);
+
+    int total_head_movements = 0;
+    // Scan all the way to extremity
+    total_head_movements = scan_one_dir(fptr, initial_head, start_pos_idx, total_head_movements, direction, requests);
+
+    // Scan to next extremity
+    total_head_movements = scan_opposite_dir(fptr, start_pos_idx, total_head_movements, direction, requests, 0);
+
+    fprintf(fptr, "\n\nLOOK - Total head movements = %d \n\n", total_head_movements);
+
+}
+
+void c_look(FILE* fptr, int initial_head, const char* direction, int requests[]){
+    fprintf(fptr, "C-LOOK DISK SCHEDULING ALGORITHM: \n\n");
+    // Find starting point
+    int start_pos_idx = find_start_pos(initial_head, direction, requests);
+
+    int total_head_movements = 0;
+
+    // Scan all the way to extremity
+    total_head_movements = scan_one_dir(fptr, initial_head, start_pos_idx, total_head_movements, direction, requests);
+
+    // Scan all the way back
+    total_head_movements = scan_from_extreme_to_start(fptr, initial_head, start_pos_idx, total_head_movements, direction, requests);
+
+    fprintf(fptr, "\n\nC-LOOK - Total head movements = %d \n\n", total_head_movements);
+}
+
+int scan_from_extreme_to_start(FILE* fptr, int initial_head, int start_pos_idx, int total_head_movements, const char* direction, int requests[]){
+    if(strcmp(direction, "LEFT") == 0){
+        return scan_left(fptr, requests[0], MAX_REQUESTS-1, start_pos_idx+1, total_head_movements, requests);
+    } else {
+        return scan_right(fptr, requests[MAX_REQUESTS-1], 0, start_pos_idx-1, total_head_movements, requests);
+    }
+}
+
 int main(int argc, char *argv[]) {
 
     // Parse initial position of the disk head
@@ -177,7 +314,10 @@ int main(int argc, char *argv[]) {
 
     fcfs(f_out, initial_position, requests);
     sstf(f_out, initial_position, requests);
+    scan(f_out, initial_position, direction, sorted_requests);
     c_scan(f_out, initial_position, direction, sorted_requests);
+    look(f_out, initial_position, direction, sorted_requests);
+    c_look(f_out, initial_position, direction, sorted_requests);
 
     fclose(f_out);
 
