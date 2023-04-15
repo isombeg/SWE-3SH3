@@ -69,22 +69,11 @@ void scan(FILE* fptr, int initial_head, const char* direction, int requests[]){
     int total_head_movements = 0;
     // Scan all the way to extremity
     total_head_movements = scan_one_dir(fptr, initial_head, start_pos_idx, total_head_movements, direction, requests);
-    // move to the end of the disk
-//    total_head_movements = record_movement_to_extreme(total_head_movements, direction, requests);
-
-    // Scan to next extremity
+    // Scan to next extremity from the original extremity
     total_head_movements = scan_opposite_dir(fptr, start_pos_idx, total_head_movements, direction, requests, 1);
 
     fprintf(fptr, "\n\nSCAN - Total head movements = %d \n\n", total_head_movements);
 
-}
-
-int record_movement_to_extreme(int total_head_movements, const char* direction, int requests[]){
-    if(strcmp(direction, "LEFT") == 0){
-        return total_head_movements + abs(requests[0]);
-    } else {
-        return total_head_movements + abs(CYLINDER_MAX - requests[MAX_REQUESTS]);
-    }
 }
 
 int scan_one_dir(FILE* fptr, int initial_head, int start_pos_idx, int total_head_movements, const char* direction, int requests[]){
@@ -92,6 +81,7 @@ int scan_one_dir(FILE* fptr, int initial_head, int start_pos_idx, int total_head
         //go all the way left from starting point
         return scan_left(fptr, initial_head, start_pos_idx, 0, total_head_movements, requests);
     } else {
+        // go all the way right from starting point
         return scan_right(fptr, initial_head, start_pos_idx, MAX_REQUESTS-1, total_head_movements, requests);
     }
 }
@@ -99,13 +89,18 @@ int scan_one_dir(FILE* fptr, int initial_head, int start_pos_idx, int total_head
 int scan_opposite_dir(FILE* fptr, int start_pos_idx, int total_head_movements, const char* direction, int requests[], int start_from_extreme){
     int initial_head;
     if(strcmp(direction, "LEFT") == 0){
+        // determine whether starting point should be extreme cylinder or request address based on flag
+        // and record head movements accordingly
         initial_head = start_from_extreme ? 0 : requests[0];
         total_head_movements += start_from_extreme ? abs(requests[0] - 0) : 0;
-        //go all the way right from starting point
+        // go all the way right from starting point
         return scan_right(fptr, initial_head, start_pos_idx+1, MAX_REQUESTS-1, total_head_movements, requests);
     } else {
+        // determine whether starting point should be extreme cylinder or request address based on flag
+        // and record head movements accordingly
         initial_head = start_from_extreme ? CYLINDER_MAX : requests[MAX_REQUESTS-1];
         total_head_movements += start_from_extreme ? abs(requests[MAX_REQUESTS-1] - CYLINDER_MAX) : 0;
+        // go all the way left from starting point
         return scan_left(fptr, initial_head, start_pos_idx-1, 0, total_head_movements, requests);
     }
 }
@@ -250,7 +245,7 @@ void look(FILE* fptr, int initial_head, const char* direction, int requests[]){
     // Scan all the way to extremity
     total_head_movements = scan_one_dir(fptr, initial_head, start_pos_idx, total_head_movements, direction, requests);
 
-    // Scan to next extremity
+    // Scan to next extremity from last cylinder
     total_head_movements = scan_opposite_dir(fptr, start_pos_idx, total_head_movements, direction, requests, 0);
 
     fprintf(fptr, "\n\nLOOK - Total head movements = %d \n\n", total_head_movements);
@@ -264,10 +259,10 @@ void c_look(FILE* fptr, int initial_head, const char* direction, int requests[])
 
     int total_head_movements = 0;
 
-    // Scan all the way to extremity
+    // Scan all the way to extremity from initial head
     total_head_movements = scan_one_dir(fptr, initial_head, start_pos_idx, total_head_movements, direction, requests);
 
-    // Scan all the way back
+    // Scan all the way back to last request from to request next to initial head
     total_head_movements = scan_from_extreme_to_start(fptr, initial_head, start_pos_idx, total_head_movements, direction, requests);
 
     fprintf(fptr, "\n\nC-LOOK - Total head movements = %d \n\n", total_head_movements);
